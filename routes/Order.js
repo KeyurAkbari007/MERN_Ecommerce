@@ -4,16 +4,16 @@ const {
   fetchOrdersByUser,
   deleteOrder,
   updateOrder,
-  //   fetchAllOrders,
+  fetchAllOrders,
 } = require("../controller/Order");
 
 const router = express.Router();
 //  /orders is already added in base path
 router
   .post("/", createOrder)
-  .get("/", fetchOrdersByUser)
+  .get("/own", fetchOrdersByUser)
   .delete("/:id", deleteOrder)
-  .patch("/:id", updateOrder);
-//   .get('/',fetchAllOrders)
+  .patch("/:id", updateOrder)
+  .get("/", fetchAllOrders);
 
 exports.router = router;
