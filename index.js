@@ -21,6 +21,7 @@ const { User } = require("./model/User");
 const { isAuth, sanitizeUser, cookieExtractor } = require("./services/common");
 const jwt = require("jsonwebtoken");
 const path = require("path");
+const { Order } = require("./model/Order");
 
 // const SECRET_KEY = "SECRET_KEY";
 
@@ -30,7 +31,7 @@ const endpointSecret = process.env.ENDPOINT_SECRET;
 server.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  (request, response) => {
+  async (request, response) => {
     let event = request.body;
     // Only verify the event if you have an endpoint secret defined.
     // Otherwise use the basic event deserialized with JSON.parse
@@ -52,10 +53,12 @@ server.post(
     // Handle the event
     switch (event.type) {
       case "payment_intent.succeeded":
-        const paymentIntent = event.data.object;
-        console.log(
-          `PaymentIntent for ${paymentIntent.amount} was successful!`
+        const paymentIntentSucceeded = event.data.object;
+        const order = await Order.findById(
+          paymentIntentSucceeded.metadata.orderId
         );
+        order.paymentStatus = "received";
+        await order.save();
         // Then define and call a method to handle the successful payment intent.
         // handlePaymentIntentSucceeded(paymentIntent);
         break;
@@ -101,6 +104,11 @@ server.use("/users", isAuth(), usersRouter.router);
 server.use("/auth", authRouter.router);
 server.use("/cart", isAuth(), cartRouter.router);
 server.use("/orders", isAuth(), orderRouter.router);
+
+// this line we add to make react router work in case of other routes doesnt match
+server.get("*", (req, res) =>
+  res.sendFile(path.resolve("build", "index.html"))
+);
 
 // passport strategies
 passport.use(
